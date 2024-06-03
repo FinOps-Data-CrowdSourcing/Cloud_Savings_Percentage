@@ -1,13 +1,7 @@
-WITH variables AS (
-  SELECT --The following timestamps in combination with changes to the where clause allow non-month boundary queries
-         TIMESTAMP '2024-04-01 00:00:00' AS query_start --Beginning of time period
-        ,TIMESTAMP '2024-04-30 23:59:59' AS query_end --End of time period and included in range
-)
 SELECT billing_month
-      --submit the output of the next four lines into the form
+      --submit the output of the next three lines into the form
       ,hash_id
       ,FORMAT('$%,.2f',charges) AS charges
-      --,FORMAT('$%,.2f',net_cost) AS net_cost
       ,ROUND((1-(1.0*net_cost/charges))*100,2) AS cloud_savings_pct
 FROM (
 SELECT CONCAT(year,'-',LPAD(month,2,'0')) AS billing_month
@@ -36,8 +30,7 @@ SELECT CONCAT(year,'-',LPAD(month,2,'0')) AS billing_month
       + SUM(CASE WHEN line_item_line_item_type = 'SavingsPlanNegation' THEN line_item_net_unblended_cost ELSE 0 END) --SavingsPlanNegation
       + SUM(CASE WHEN line_item_line_item_type = 'RIFee' THEN reservation_net_amortized_upfront_cost_for_usage ELSE 0 END) --UpfrontReservationFee
       AS DECIMAL(17,2)) AS net_cost
-  FROM cur --,variables
+  FROM cur
  WHERE bill_billing_entity = 'AWS'
    AND year = '2024' AND month = '4'
- --AND line_item_usage_start_date between query_start AND query_end
  GROUP BY 1,2)
